@@ -423,7 +423,7 @@ onMounted(async () => {
 });
 </script>
 
-<style scoped>
+<style>
 :root {
   --bg-color: #f0fdf4;
   --card-bg: #ffffff;
