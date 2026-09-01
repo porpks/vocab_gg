@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minimal Vocab App</title>
+  <style>
+    :root {
+      --bg-color: #f0fdf4;
+      --card-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --primary-blue: #2563eb;
+      --primary-green: #10b981;
+      --border-color: #e2e8f0;
+      --shadow-sm: 0 4px 16px rgba(15, 23, 42, 0.04);
+      --shadow-md: 0 10px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    /* Screen Management */
+    .screen {
+      display: none;
+      width: 100%;
+      max-width: 520px;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    /* Main Menu Screen */
+    .menu-container {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .menu-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 32px 24px;
+      text-align: center;
+      box-shadow: var(--shadow-sm);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .menu-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--primary-green);
+    }
+
+    .menu-card h2 {
+      font-size: 26px;
+      font-weight: 500;
+      color: var(--text-main);
+    }
+
+    .menu-card .count-badge {
+      display: inline-block;
+      margin-top: 6px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* Exercise & Summary Screen */
+    .exercise-card {
+      background: var(--card-bg);
+      border-radius: 24px;
+      padding: 28px;
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--border-color);
+      position: relative;
+    }
+
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 15px;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+
+    .header-title {
+      font-weight: 600;
+      color: var(--text-main);
+      font-size: 16px;
+    }
+
+    .vocab-card {
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 40px 20px;
+      text-align: center;
+      margin-bottom: 24px;
+      background: #fafafa;
+    }
+
+    .pos-tag {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .word-title {
+      font-size: 34px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 16px;
+    }
+
+    .hint-text {
+      font-size: 16px;
+      color: var(--text-muted);
+      letter-spacing: 2px;
+      min-height: 24px;
+    }
+
+    .input-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .input-field {
+      flex: 1;
+      padding: 12px 20px;
+      border: 1px solid var(--border-color);
+      border-radius: 30px;
+      font-size: 16px;
+      outline: none;
+      transition: border 0.2s;
+    }
+
+    .input-field:focus {
+      border-color: var(--primary-blue);
+    }
+
+    .btn {
+      border: 1px solid var(--border-color);
+      background: var(--card-bg);
+      border-radius: 30px;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-main);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn:hover {
+      background: #f8fafc;
+    }
+
+    .btn-submit {
+      padding: 10px 24px;
+    }
+
+    .btn-submit.active {
+      background: var(--primary-blue);
+      color: white;
+      border-color: var(--primary-blue);
+    }
+
+    .bottom-controls {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .back-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 14px;
+      margin-bottom: 12px;
+      display: inline-block;
+    }
+
+    .back-btn:hover {
+      color: var(--text-main);
+    }
+
+    .feedback {
+      text-align: center;
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 12px;
+      min-height: 20px;
+    }
+    .feedback.correct { color: var(--primary-green); }
+    .feedback.wrong { color: #ef4444; }
+    .feedback.info { color: var(--primary-blue); }
+
+    /* Summary Screen Specific Styles */
+    .summary-score-card {
+      text-align: center;
+      padding: 20px;
+      background: #fafafa;
+      border-radius: 16px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border-color);
+    }
+
+    .score-number {
+      font-size: 42px;
+      font-weight: 700;
+      color: var(--primary-green);
+      margin-top: 4px;
+    }
+
+    .summary-section {
+      margin-bottom: 20px;
+    }
+
+    .summary-section h3 {
+      font-size: 15px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .word-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .word-badge {
+      background: #f1f5f9;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 14px;
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+    }
+
+    .empty-text {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .loading-bar {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="screen active">
+        <div class="loading-bar">
+          <span class="header-title">Loading...</span>
+        </div>
+    </div>
+
+  <!-- Main Menu Screen -->
+  <div id="main-screen" class="screen">
+    <div class="menu-container">
+      <div class="menu-card" onclick="startExercise('new')">
+        <h2>New Vocab</h2>
+        <span id="new-count" class="count-badge">0 words</span>
+      </div>
+      <div class="menu-card" onclick="startExercise('remember')">
+        <h2>Remember Vocab</h2>
+        <span id="remember-count" class="count-badge">0 words</span>
+      </div>
+      <div class="menu-card" onclick="startExercise('review')">
+        <h2>Review Vocab</h2>
+        <span id="review-count" class="count-badge">0 words</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Exercise Screen -->
+  <div id="exercise-screen" class="screen">
+    <button class="back-btn" onclick="showScreen('main-screen')">← Back to Menu</button>
+    <div class="exercise-card">
+      <div class="header-bar">
+        <span id="vocab-counter">vocab 1/30</span>
+        <span id="mode-title" class="header-title">New Vocab</span>
+        <span id="progress-percent">0%</span>
+      </div>
+
+      <div class="vocab-card">
+        <div id="pos-display" class="pos-tag">Part of speech</div>
+        <div id="meaning-display" class="word-title">Vocabulary</div>
+        <div id="hint-display" class="hint-text">ab...</div>
+      </div>
+
+      <div id="feedback" class="feedback"></div>
+
+      <div class="input-group">
+        <input type="text" id="user-input" class="input-field" placeholder="Typing..." autocomplete="off">
+        <button id="submit-btn" class="btn btn-submit" onclick="handleSubmit()">Submit</button>
+      </div>
+
+      <div class="bottom-controls">
+        <button class="btn" onclick="handlePass()">Pass</button>
+        <button class="btn" onclick="handleAnswer()">Answer</button>
+        <button class="btn" onclick="handleNote()">Note</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary Screen -->
+  <div id="summary-screen" class="screen">
+    <div class="exercise-card">
+      <div class="header-bar">
+        <span class="header-title">Session Summary</span>
+      </div>
+
+      <div class="summary-score-card">
+        <div>Score (Correct Submissions)</div>
+        <div id="score-display" class="score-number">0 / 0</div>
+      </div>
+
+      <div class="summary-section">
+        <h3>Passed Vocab</h3>
+        <div id="passed-list" class="word-list"></div>
+      </div>
+
+      <div class="summary-section">
+        <h3>Revealed Answers</h3>
+        <div id="answered-list" class="word-list"></div>
+      </div>
+
+      <div class="summary-section">
+        <h3>Noted Vocab</h3>
+        <div id="noted-list" class="word-list"></div>
+      </div>
+
+      <button class="btn btn-submit active" style="width: 100%; margin-top: 10px;" onclick="showScreen('main-screen')">Return to Main Menu</button>
+    </div>
+  </div>
+
+  <script>
+    // Sheet Names
+    const SHEET_NEW_VOCAB = "New Vocab";
+    const SHEET_REMEMBER_VOCAB = "Remember Vocab";
+    const SHEET_REVIEW_VOCAB = "Review Vocab";
+    // Keys for accessing CSV columns (Column Header)
+    const KEY_WORD = "Word";
+    const KEY_POS = "Parts of Speech";
+    const KEY_MEANING = "Definition";
+
+    // Paste your published CSV link here
+    const BASE_ENDPOINT_URL = "https://sheetdb.io/api/v1/avvuri7rkjp0b"; 
+    const NEW_VOCAB_CSV_URL = `${BASE_ENDPOINT_URL}?sheet=${SHEET_NEW_VOCAB}`; 
+    const REMEMBER_VOCAB_CSV_URL = `${BASE_ENDPOINT_URL}?sheet=${SHEET_REMEMBER_VOCAB}`; 
+    const REVIEW_VOCAB_CSV_URL = `${BASE_ENDPOINT_URL}?sheet=${SHEET_REVIEW_VOCAB}`; 
+
+    let baseNewVocabList = [];
+    let rememberVocabList = [];
+    let reviewVocabList = [];
+
+    let currentList = [];
+    let currentIndex = 0;
+    let currentMode = 'new';
+    let isProcessing = false;
+
+    let correctList = [];
+    let passedList = [];
+    let answeredList = [];
+    let notedList = [];
+
+    async function saveStorage(prevRememberData = [], prevReviewData = []) {
+      if (rememberVocabList.length > prevRememberData.length)
+        await addToGoogleSheet(REMEMBER_VOCAB_CSV_URL, rememberVocabList, prevRememberData);
+      else if (rememberVocabList.length < prevRememberData.length)
+        await removeFromGoogleSheet(REMEMBER_VOCAB_CSV_URL, rememberVocabList, prevRememberData);
+
+      if (reviewVocabList.length > prevReviewData.length)
+        await addToGoogleSheet(REVIEW_VOCAB_CSV_URL, reviewVocabList, prevReviewData);
+      else if (reviewVocabList.length < prevReviewData.length)
+        await removeFromGoogleSheet(REVIEW_VOCAB_CSV_URL, reviewVocabList, prevReviewData);
+
+      updateMenuCounts();
+    }
+
+    function shuffleArray(array) {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function getActiveNewVocabList() {
+      return baseNewVocabList.filter(item => 
+        !rememberVocabList.some(r => r[KEY_WORD].toLowerCase() === item[KEY_WORD].toLowerCase()) &&
+        !reviewVocabList.some(rv => rv[KEY_WORD].toLowerCase() === item[KEY_WORD].toLowerCase())
+      );
+    }
+
+    function updateMenuCounts() {
+      document.getElementById('new-count').textContent = `${getActiveNewVocabList().length} words`;
+      document.getElementById('remember-count').textContent = `${rememberVocabList.length} words`;
+      document.getElementById('review-count').textContent = `${reviewVocabList.length} words`;
+    }
+
+    function showScreen(screenId) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      const screen = document.getElementById(screenId);
+      if (screen) screen.classList.add('active');
+      if (screenId === 'main-screen') updateMenuCounts();
+    }
+
+    function startExercise(mode) {
+      currentMode = mode;
+      currentIndex = 0;
+      isProcessing = false;
+
+      if (mode === 'new') {
+        const available = getActiveNewVocabList();
+        // Shuffle available words and select up to 25 words
+        currentList = shuffleArray(available).slice(0, 25);
+      } else if (mode === 'remember') {
+        currentList = [...rememberVocabList];
+      } else {
+        currentList = [...reviewVocabList];
+      }
+
+      if (currentList.length === 0) {
+        alert("No words available in this section!");
+        return;
+      }
+
+      correctList = [];
+      passedList = [];
+      answeredList = [];
+      notedList = [];
+
+      const modeTitles = { new: 'New Vocab', remember: 'Remember Vocab', review: 'Review Vocab' };
+      document.getElementById('mode-title').textContent = modeTitles[mode];
+      showScreen('exercise-screen');
+      loadQuestion();
+    }
+
+    function loadQuestion() {
+      if (currentIndex >= currentList.length) {
+        showSummary();
+        return;
+      }
+
+      const item = currentList[currentIndex];
+      document.getElementById('pos-display').textContent = item[KEY_POS] || "Part of speech";
+      document.getElementById('meaning-display').textContent = item[KEY_MEANING];
+      document.getElementById('hint-display').textContent = item[KEY_WORD].substring(0, 2) + "...";
+      
+      const userInput = document.getElementById('user-input');
+      userInput.value = "";
+      userInput.disabled = false;
+      
+      document.getElementById('feedback').textContent = "";
+      document.getElementById('submit-btn').classList.remove('active');
+
+      document.getElementById('vocab-counter').textContent = `vocab ${currentIndex + 1}/${currentList.length}`;
+      const percent = Math.round((currentIndex / currentList.length) * 100);
+      document.getElementById('progress-percent').textContent = `${percent}%`;
+    }
+
+    function moveToReview(item) {
+      const prevRememberData = [...rememberVocabList];
+      const prevReviewData = [...reviewVocabList];
+      rememberVocabList = rememberVocabList.filter(v => v[KEY_WORD].toLowerCase() !== item[KEY_WORD].toLowerCase());
+      if (!reviewVocabList.some(v => v[KEY_WORD].toLowerCase() === item[KEY_WORD].toLowerCase())) {
+        reviewVocabList.push(item);
+      }
+      saveStorage(prevRememberData, prevReviewData);
+    }
+
+    function moveToRemember(item) {
+      const prevRememberData = [...rememberVocabList];
+      const prevReviewData = [...reviewVocabList];
+      if (!rememberVocabList.some(v => v[KEY_WORD].toLowerCase() === item[KEY_WORD].toLowerCase()) &&
+          !reviewVocabList.some(v => v[KEY_WORD].toLowerCase() === item[KEY_WORD].toLowerCase())) {
+        rememberVocabList.push(item);
+        saveStorage(prevRememberData, prevReviewData);
+      }
+    }
+
+    function demoteFromReviewToRemember(item) {
+      const prevRememberData = [...rememberVocabList];
+      const prevReviewData = [...reviewVocabList];
+      reviewVocabList = reviewVocabList.filter(v => v[KEY_WORD].toLowerCase() !== item[KEY_WORD].toLowerCase());
+      if (!rememberVocabList.some(v => v[KEY_WORD].toLowerCase() === item[KEY_WORD].toLowerCase())) {
+        rememberVocabList.push(item);
+      }
+      saveStorage(prevRememberData, prevReviewData);
+    }
+
+    function handleSubmit() {
+      if (isProcessing) return;
+
+      const input = document.getElementById('user-input').value.trim().toLowerCase();
+      const currentItem = currentList[currentIndex];
+      const answer = currentItem[KEY_WORD].toLowerCase();
+      const feedback = document.getElementById('feedback');
+
+      if (input === answer) {
+        feedback.textContent = "Correct!";
+        feedback.className = "feedback correct";
+        correctList.push(currentItem);
+
+        moveToReview(currentItem);
+
+        isProcessing = true;
+        setTimeout(() => {
+          isProcessing = false;
+          currentIndex++;
+          loadQuestion();
+        }, 600);
+      } else {
+        feedback.textContent = "Incorrect. Try again!";
+        feedback.className = "feedback wrong";
+      }
+    }
+
+    function handlePass() {
+      if (isProcessing) return;
+      const currentItem = currentList[currentIndex];
+      passedList.push(currentItem);
+      
+      if (currentMode === 'new') {
+        moveToRemember(currentItem);
+      } else if (currentMode === 'review') {
+        demoteFromReviewToRemember(currentItem);
+      }
+
+      currentIndex++;
+      loadQuestion();
+    }
+
+    function handleAnswer() {
+      if (isProcessing) return;
+      isProcessing = true;
+
+      const currentItem = currentList[currentIndex];
+      const userInput = document.getElementById('user-input');
+      const feedback = document.getElementById('feedback');
+
+      userInput.value = currentItem[KEY_WORD];
+      userInput.disabled = true;
+      document.getElementById('submit-btn').classList.add('active');
+      
+      feedback.textContent = "Revealing answer (3s)...";
+      feedback.className = "feedback info";
+
+      answeredList.push(currentItem);
+
+      if (currentMode === 'new') {
+        moveToRemember(currentItem);
+      } else if (currentMode === 'review') {
+        demoteFromReviewToRemember(currentItem);
+      }
+
+      setTimeout(() => {
+        isProcessing = false;
+        currentIndex++;
+        loadQuestion();
+      }, 3000);
+    }
+
+    function handleNote() {
+      if (isProcessing) return;
+      const currentItem = currentList[currentIndex];
+      notedList.push(currentItem);
+      
+      if (currentMode === 'new') {
+        moveToRemember(currentItem);
+      } else if (currentMode === 'review') {
+        demoteFromReviewToRemember(currentItem);
+      }
+
+      currentIndex++;
+      loadQuestion();
+    }
+
+    function showSummary() {
+      showScreen('summary-screen');
+      document.getElementById('score-display').textContent = `${correctList.length} / ${currentList.length}`;
+
+      renderWordBadges('passed-list', passedList);
+      renderWordBadges('answered-list', answeredList);
+      renderWordBadges('noted-list', notedList);
+    }
+
+    function renderWordBadges(elementId, items) {
+      const container = document.getElementById(elementId);
+      if (items.length === 0) {
+        container.innerHTML = `<span class="empty-text">None</span>`;
+        return;
+      }
+      container.innerHTML = items.map(item => `<span class="word-badge">${item[KEY_WORD]}</span>`).join('');
+    }
+
+    document.getElementById('user-input').addEventListener('input', (e) => {
+      const submitBtn = document.getElementById('submit-btn');
+      if (e.target.value.trim().length > 0) {
+        submitBtn.classList.add('active');
+      } else {
+        submitBtn.classList.remove('active');
+      }
+    });
+
+    document.getElementById('user-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') handleSubmit();
+    });
+
+    // Code that connects to Google Sheets
+    async function fetchGoogleSheet(csvUrl) {
+      if (!csvUrl) return null;
+      try {
+        const response = await fetch(csvUrl);
+        const text = await response.text();
+        const json = JSON.parse(text);
+        if (!Array.isArray(json)) {
+          console.error("Parsed JSON is not an array:", json);
+          return null;
+        }
+        return json;
+      } catch (e) {
+        console.error("Error fetching Google Sheet data:", e);
+        return null;
+      }
+    }
+    async function addToGoogleSheet(csvUrl, data, prevdata = []) {
+      if (!csvUrl || !data) return null;
+      if (!Array.isArray(data)) return null;
+      if (data.length === 0) return null;
+
+      const existingData = prevdata.length > 0 ? prevdata : await fetchGoogleSheet(csvUrl);
+      const uniqueData = data.filter(item => !existingData.some(existingItem => existingItem[KEY_WORD] === item[KEY_WORD]));
+      
+      try {
+        const response = await fetch(csvUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(uniqueData)
+        });
+        return await response.json();
+      } catch (e) {
+        console.error("Error saving to Google Sheet:", e);
+        return null;
+      }
+    }
+    async function removeFromGoogleSheet(csvUrl, data, prevdata = []) {
+      if (!csvUrl || !data) return null;
+      if (!Array.isArray(data)) return null;
+
+      const existingData = prevdata.length > 0 ? prevdata : await fetchGoogleSheet(csvUrl);
+      const filteredData = data.length > 0 ? existingData.filter(item => !data.some(removeItem => removeItem[KEY_WORD] === item[KEY_WORD])) : existingData;
+      
+      const results = [];
+      for (const item of filteredData) {
+        try {
+          const endpoint = csvUrl.replace(BASE_ENDPOINT_URL, `${BASE_ENDPOINT_URL}/${KEY_WORD}/${item[KEY_WORD]}`);
+          const response = await fetch(endpoint, {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+          });
+          console.log("response data from Google Sheet:", response);
+          const result = await response.json();
+          results.push(result);
+        } catch (e) {
+          console.error("Error removing from Google Sheet:", e);
+        }
+      }
+      return results;
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      //add loading UI while fetching data
+      showScreen('loading-screen');
+      const fetchedNew = await fetchGoogleSheet(NEW_VOCAB_CSV_URL);
+      if (fetchedNew) baseNewVocabList = fetchedNew;
+      
+      const fetchedRemember = await fetchGoogleSheet(REMEMBER_VOCAB_CSV_URL);
+      if (fetchedRemember) rememberVocabList = fetchedRemember;
+
+      const fetchedReview = await fetchGoogleSheet(REVIEW_VOCAB_CSV_URL);
+      if (fetchedReview) reviewVocabList = fetchedReview;
+
+      updateMenuCounts();
+      showScreen('main-screen');
+    });
+  </script>
+</body>
+</html>
